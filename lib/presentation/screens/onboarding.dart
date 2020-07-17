@@ -1,8 +1,11 @@
+import 'package:agora_rtc_engine/agora_rtc_engine.dart';
 import 'package:flutter/material.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 import '../../utils/presentation/styles.dart';
 import '../widgets/onboarding_widget.dart';
 import 'bottom_nav.dart';
+import 'meeting.dart';
 
 class OnboardingScreen extends StatefulWidget {
   static const routename = "/onboarding";
@@ -11,6 +14,98 @@ class OnboardingScreen extends StatefulWidget {
 }
 
 class _OnboardingScreenState extends State<OnboardingScreen> {
+  TextEditingController _channelController = TextEditingController();
+
+  final _formKey = GlobalKey<FormState>();
+
+  _getPermissions() async {
+    await PermissionHandler().requestPermissions(
+      [PermissionGroup.camera, PermissionGroup.microphone],
+    );
+  }
+
+  _joinChannel(ClientRole role) async {
+    if (_formKey.currentState.validate()) {
+      await _getPermissions();
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          fullscreenDialog: true,
+          maintainState: false,
+          builder: (context) => MeetingScreen(
+            channelName: _channelController.text,
+            role: role,
+          ),
+        ),
+      );
+    }
+  }
+
+  _openOverlay() {
+    ClientRole _role = ClientRole.Audience;
+    return showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setNewState) => AlertDialog(
+          title: Text('Enter Channel Name'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Form(
+                key: _formKey,
+                child: TextFormField(
+                  controller: _channelController,
+                  decoration: InputDecoration(
+                    border: OutlineInputBorder(
+                      borderRadius: borderRadius10,
+                      borderSide: BorderSide.none,
+                    ),
+                    fillColor: Colors.grey[200],
+                    filled: true,
+                    hintText: 'Enter Channel Name',
+                    hintStyle: TextStyle(
+                      color: Colors.grey,
+                    ),
+                  ),
+                  validator: (value) {
+                    if (value.isEmpty) {
+                      return 'channel name is required';
+                    }
+                  },
+                ),
+              ),
+              SizedBox(
+                height: 20,
+              ),
+              RadioListTile<ClientRole>(
+                title: Text('Audience'),
+                groupValue: _role,
+                value: ClientRole.Audience,
+                onChanged: (value) {
+                  setNewState(() {
+                    _role = value;
+                  });
+                },
+              ),
+            ],
+          ),
+          actions: <Widget>[
+            FlatButton(
+              child: Text(
+                'JOIN',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).primaryColor,
+                ),
+              ),
+              onPressed: () => _joinChannel(_role),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   PageController _pageController;
   int _currentPage;
 
@@ -127,7 +222,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           borderRadius: borderRadius10,
                         ),
                         textColor: Colors.white,
-                        onPressed: () {},
+                        onPressed: _openOverlay,
                       ),
                     ),
                     Row(

@@ -14,6 +14,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      // showSemanticsDebugger: true,
       theme: ThemeData(
         primaryColor: Colors.blue[800],
         canvasColor: Colors.grey[200],
